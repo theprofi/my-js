@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+  body{
+    font-family: 'Segoe UI';
+    font-size: 12pt;
+}
+
+header h1{
+    font-size:12pt;
+    color: #fff;
+    background-color: #1BA1E2;
+    padding: 20px;
+
+}
+article
+{
+    width: 80%;
+    margin:auto;
+    margin-top:10px;
+}
+
+
+.thumbnail{
+
+    height: 100px;
+    margin: 10px;    
+}
+
+      </style>
+    <script type="text/javascript" src="lib-files/LZWEncoder.js"></script>
+    <script type="text/javascript" src="lib-files/NeuQuant.js"></script>
+    <script type="text/javascript" src="lib-files/GIFEncoder.js"></script>
+    <script type="text/javascript" src="lib-files/b64.js"></script>
+    <title>File API - FileReader as Data URL</title>
+</head>
+<body>
+    <header>
+        <h1>File API - FileReader</h1>
+    </header>
+    <canvas id="canvas0"></canvas>
+    <canvas id="canvas1"></canvas>
+    <img id="image"/>
+    <article>
+        <label for="files">Select multiple files: </label>
+        <input id="files" type="file" multiple/>
+        <output id="result" />
+    </article>
+    <script>
+      function imgChange(imagePath, canvas_id) {
+            var c=document.getElementById(canvas_id);
+            var ctx=c.getContext("2d");
+            var img=new Image();
+            img.onload = function(){
+                  c.width = img.width;
+                  c.height = img.height;
+                  ctx.drawImage(img,0,0);
+            };
+            img.src=imagePath;
+}
+    window.onload = function(){
+        var counter = 0;
+        function create_gif(){
+          var encoder = new GIFEncoder();
+          encoder.setRepeat(0); //0  -> loop forever
+          encoder.start();
+
+          encoder.setDelay(500); //go to next frame every n milliseconds
+          var canvas = document.getElementById('canvas0');
+          var context = canvas.getContext('2d');
+          encoder.addFrame(context);
+
+          encoder.setDelay(2000); //go to next frame every n milliseconds
+          var canvas2 = document.getElementById('canvas1');
+          var context2 = canvas2.getContext('2d');
+          encoder.addFrame(context2);
+          
+          encoder.finish();
+          document.getElementById('image').src = 'data:image/gif;base64,'+encode64(encoder.stream().getData())
+          encoder.download("download.gif");
+        }
+        //Check File API support
+        if(window.File && window.FileList && window.FileReader)
+        {
+            var filesInput = document.getElementById("files");
+            
+            filesInput.addEventListener("change", function(event){
+                
+                var files = event.target.files; //FileList object
+                var output = document.getElementById("result");
+                
+                for(var i = 0; i< files.length; i++)
+                {
+                    var file = files[i];
+                    
+                    //Only pics
+                    if(!file.type.match('image'))
+                      continue;
+                    
+                    var picReader = new FileReader();
+                    
+                    picReader.addEventListener("load",function(event){
+                        
+                        var picFile = event.target;
+                        
+                        // var div = document.createElement("div");
+                        
+                        // div.innerHTML = "<img class='thumbnail' src='" + picFile.result + "'" +
+                        //         "title='" + picFile.name + "'/>";
+                        console.log("canvas" + counter);
+
+                        imgChange(picFile.result, "canvas" + counter);
+                        counter = counter + 1;
+                        // output.insertBefore(div,null);            
+                    
+                    });
+                    
+                     //Read the image
+                    picReader.readAsDataURL(file);
+                }             
+                const sleep = (milliseconds) => {
+  return new Promise(resolve => setTimeout(resolve, milliseconds))
+}
+
+sleep(2000).then(() => {
+  create_gif();
+})                  
+               
+            });
+        }
+        else
+        {
+            console.log("Your browser does not support File API");
+        }
+    }
+        
+    </script>
+</body>
+</html>
